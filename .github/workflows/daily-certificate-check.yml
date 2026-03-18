@@ -1,4 +1,4 @@
-name: Daily certificate check
+name: Daily asset expiry check
 
 on:
   schedule:
@@ -28,6 +28,8 @@ jobs:
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-          GOOGLE_SHEET_NAME: ${{ vars.GOOGLE_SHEET_NAME }}
+          GOOGLE_CERTIFICATE_SHEET_NAME: ${{ vars.GOOGLE_CERTIFICATE_SHEET_NAME }}
+          GOOGLE_DOMAIN_SHEET_NAME: ${{ vars.GOOGLE_DOMAIN_SHEET_NAME }}
+          GOOGLE_VENDOR_SHEET_NAME: ${{ vars.GOOGLE_VENDOR_SHEET_NAME }}
           TEAMS_WORKFLOW_URL: ${{ secrets.TEAMS_WORKFLOW_URL }}
         run: npm run check
