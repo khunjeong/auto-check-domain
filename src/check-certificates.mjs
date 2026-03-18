@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { google } from 'googleapis';
 
 const REQUIRED_HEADERS = ['service_name', 'expires_at'];

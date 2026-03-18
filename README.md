@@ -48,6 +48,8 @@ Google Sheets를 인증서 inventory로 사용하고, GitHub Actions가 매일 �
 
 - `GOOGLE_SHEET_NAME`: 기본값 `Inventory`
 
+로컬 실행은 `.env` 파일로 관리할 수 있습니다.
+
 ## Google setup
 
 1. Google Cloud에서 Sheets API를 활성화합니다.
@@ -87,14 +89,16 @@ npm install
 npm run check
 ```
 
-필요한 환경 변수:
+필요한 환경 변수는 `.env` 또는 shell 환경 변수로 제공합니다.
 
 ```bash
-export GOOGLE_SERVICE_ACCOUNT_JSON='{"type":"service_account",...}'
-export GOOGLE_SHEET_ID='your-sheet-id'
-export TEAMS_WORKFLOW_URL='https://...'
-export GOOGLE_SHEET_NAME='Inventory'
+GOOGLE_SERVICE_ACCOUNT_JSON='{"type":"service_account",...}'
+GOOGLE_SHEET_ID='your-sheet-id'
+TEAMS_WORKFLOW_URL='https://...'
+GOOGLE_SHEET_NAME='Inventory'
 ```
+
+GitHub Actions에서는 `.env`를 읽지 않으므로, 실제 워크플로 실행에는 동일 값을 GitHub Secrets / Variables로 넣어야 합니다.
 
 ## Alert behavior
 
