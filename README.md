@@ -143,8 +143,8 @@ Google Sheets를 inventory로 사용하고, GitHub Actions가 매일 실행되�
     "vendorEmail": "am@registrar.example",
     "vendorNotes": "Domain renewals"
   },
-  "summary": "[DOMAIN D-30] example.com expires on 2026-05-01",
-  "markdown": "Asset type: domain\nAsset name: example.com\nOwner: Platform Team\nExpires at: 2026-05-01\nDays remaining: 30\nVendor: Example Registrar"
+  "summary": "[도메인 D-30] example.com 만료 예정일은 2026-05-01 입니다.",
+  "markdown": "자산 유형: 도메인\n자산 이름: example.com\n담당자: Platform Team\n만료일: 2026-05-01\n남은 일수: 30일\n관리 업체: Example Registrar"
 }
 ```
 

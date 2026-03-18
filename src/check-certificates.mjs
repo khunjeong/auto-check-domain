@@ -272,19 +272,19 @@ async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName
       vendor,
       rowNumber,
       sheetName,
-      summary: `[${assetType.toUpperCase()} D-${alertWindow}] ${assetName} expires on ${expiresAtIso}`,
+      summary: `[${assetType === 'domain' ? '도메인' : '인증서'} D-${alertWindow}] ${assetName} 만료 예정일은 ${expiresAtIso} 입니다.`,
       markdown: [
-        `Asset type: ${assetType}`,
-        `Asset name: ${assetName}`,
-        owner ? `Owner: ${owner}` : null,
-        teamsRecipient ? `Teams recipient: ${teamsRecipient}` : null,
-        `Expires at: ${expiresAtIso}`,
-        `Days remaining: ${daysRemaining}`,
-        vendorSummary ? `Vendor: ${vendorSummary}` : null,
-        vendor?.vendorContact ? `Vendor contact: ${vendor.vendorContact}` : null,
-        vendor?.vendorEmail ? `Vendor email: ${vendor.vendorEmail}` : null,
-        notes ? `Notes: ${notes}` : null,
-        vendor?.vendorNotes ? `Vendor notes: ${vendor.vendorNotes}` : null
+        `자산 유형: ${assetType === 'domain' ? '도메인' : '인증서'}`,
+        `자산 이름: ${assetName}`,
+        owner ? `담당자: ${owner}` : null,
+        teamsRecipient ? `Teams 수신자: ${teamsRecipient}` : null,
+        `만료일: ${expiresAtIso}`,
+        `남은 일수: ${daysRemaining}일`,
+        vendorSummary ? `관리 업체: ${vendorSummary}` : null,
+        vendor?.vendorContact ? `업체 담당자: ${vendor.vendorContact}` : null,
+        vendor?.vendorEmail ? `업체 이메일: ${vendor.vendorEmail}` : null,
+        notes ? `비고: ${notes}` : null,
+        vendor?.vendorNotes ? `업체 메모: ${vendor.vendorNotes}` : null
       ]
         .filter(Boolean)
         .join('\n')
