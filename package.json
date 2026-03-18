@@ -1,0 +1,15 @@
+{
+  "name": "auto-check-domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node src/check-certificates.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "googleapis": "^154.1.0"
+  }
+}
