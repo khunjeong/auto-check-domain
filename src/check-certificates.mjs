@@ -131,6 +131,10 @@ async function sendTeamsAlert(url, payload) {
   }
 }
 
+function isDryRun() {
+  return ['1', 'true', 'yes'].includes(String(process.env.DRY_RUN ?? '').trim().toLowerCase());
+}
+
 async function getSheetRows(sheets, spreadsheetId, sheetName) {
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId,
@@ -178,7 +182,7 @@ async function loadVendors(sheets, spreadsheetId, sheetName) {
   }
 }
 
-async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName, assetType, nameHeaders, vendorMap, nowIso, todayUtc }) {
+async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName, assetType, nameHeaders, vendorMap, nowIso, todayUtc, dryRun }) {
   const rows = await getSheetRows(sheets, spreadsheetId, sheetName);
   if (rows.length === 0) {
     console.log(`No rows found in ${sheetName}.`);
@@ -290,7 +294,12 @@ async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName
         .join('\n')
     };
 
-    await sendTeamsAlert(workflowUrl, payload);
+    if (dryRun) {
+      console.log(`Dry run alert payload for ${sheetName} row ${rowNumber}:`);
+      console.log(JSON.stringify(payload, null, 2));
+    } else {
+      await sendTeamsAlert(workflowUrl, payload);
+    }
 
     const notifiedHeader = alertWindow === 30 ? 'notified_30d_at' : 'notified_14d_at';
     updates.push({
@@ -301,7 +310,7 @@ async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName
     console.log(`Alert sent for ${sheetName} row ${rowNumber}: ${assetName} (${assetType}, D-${alertWindow})`);
   }
 
-  if (updates.length > 0) {
+  if (updates.length > 0 && !dryRun) {
     await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId,
       requestBody: {
@@ -309,6 +318,8 @@ async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName
         data: updates
       }
     });
+  } else if (updates.length > 0 && dryRun) {
+    console.log(`Dry run skipped ${updates.length} sheet update(s) for ${sheetName}.`);
   }
 
   return { sentCount };
@@ -321,6 +332,7 @@ async function main() {
   const vendorSheetName = process.env.GOOGLE_VENDOR_SHEET_NAME || 'Vendors';
 
   const sheets = await getSheetsClient(serviceAccountJson);
+  const dryRun = isDryRun();
   const today = new Date();
   const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
   const nowIso = new Date().toISOString();
@@ -338,7 +350,8 @@ async function main() {
       nameHeaders: config.nameHeaders,
       vendorMap,
       nowIso,
-      todayUtc
+      todayUtc,
+      dryRun
     });
     sentCount += result.sentCount;
   }

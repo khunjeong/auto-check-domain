@@ -168,6 +168,22 @@ GOOGLE_VENDOR_SHEET_NAME='Vendors'
 
 GitHub Actions에서는 `.env`를 읽지 않으므로, 실제 워크플로 실행에는 동일 값을 GitHub Secrets / Variables로 넣어야 합니다.
 
+## Test
+
+가장 안전한 테스트는 `DRY_RUN=true`로 실행하는 것입니다. 이 모드에서는 Google Sheets를 읽지만 Teams로 메시지를 보내지 않고, 시트 상태 컬럼도 업데이트하지 않습니다.
+
+```bash
+DRY_RUN=true npm run check
+```
+
+테스트용 행을 만들 때는 `expires_at`을 오늘 기준 30일 이내 또는 14일 이내로 넣고, `notified_30d_at`, `notified_14d_at`은 비워 둡니다. 예를 들어 오늘이 2026-05-05라면 D-30 테스트는 `2026-06-04`, D-14 테스트는 `2026-05-19`를 사용합니다.
+
+실제 Teams 알림까지 확인하려면 `DRY_RUN`을 제거하고 수동 실행합니다.
+
+```bash
+npm run check
+```
+
 ## Alert behavior
 
 - `Certificates` 시트와 `Domains` 시트를 모두 순회
