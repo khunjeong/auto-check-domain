@@ -26,7 +26,15 @@ const HEADER_ALIASES = {
   trackedExpiresAt: ['tracked_expires_at'],
   notified30dAt: ['notified_30d_at', '30일전알림일'],
   notified14dAt: ['notified_14d_at', '14일전알림일'],
-  status: ['status', '상태']
+  status: ['status', '상태'],
+  serviceName: ['service_name', '서비스명'],
+  serviceDomain: ['service_domain', '서비스도메인'],
+  environment: ['environment', '운영환경'],
+  contactName: ['contact_name', '담당자'],
+  contactEmail: ['contact_email', '담당자이메일'],
+  department: ['department', '담당부서'],
+  contactChannel: ['contact_channel', '연락채널'],
+  serviceNotes: ['service_notes', '서비스메모']
 };
 
 function requireEnv(name, fallback = undefined) {
@@ -266,6 +274,14 @@ async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName
     const notes = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.notes);
     const vendorKey = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.vendorKey);
     const vendor = vendorMap.get(vendorKey) ?? null;
+    const serviceName = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.serviceName);
+    const serviceDomain = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.serviceDomain);
+    const environment = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.environment);
+    const contactName = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.contactName);
+    const contactEmail = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.contactEmail);
+    const department = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.department);
+    const contactChannel = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.contactChannel);
+    const serviceNotes = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.serviceNotes);
     const rowModel = {
       notified30dAt,
       notified14dAt
@@ -301,13 +317,30 @@ async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName
       notes,
       vendorKey,
       vendor,
+      service: {
+        serviceName,
+        serviceDomain,
+        environment,
+        contactName,
+        contactEmail,
+        department,
+        contactChannel,
+        serviceNotes
+      },
       rowNumber,
       sheetName,
       summary: `[${assetType === 'domain' ? '도메인' : '인증서'} D-${alertWindow}] ${assetName} 만료 예정일은 ${expiresAtIso} 입니다.`,
       markdown: [
         `자산 유형: ${assetType === 'domain' ? '도메인' : '인증서'}`,
         `자산 이름: ${assetName}`,
+        serviceName ? `서비스명: ${serviceName}` : null,
+        serviceDomain ? `서비스 도메인: ${serviceDomain}` : null,
+        environment ? `운영환경: ${environment}` : null,
         owner ? `담당자: ${owner}` : null,
+        contactName ? `서비스 담당자: ${contactName}` : null,
+        contactEmail ? `담당자 이메일: ${contactEmail}` : null,
+        department ? `담당부서: ${department}` : null,
+        contactChannel ? `연락채널: ${contactChannel}` : null,
         teamsRecipient ? `Teams 수신자: ${teamsRecipient}` : null,
         `만료일: ${expiresAtIso}`,
         `남은 일수: ${daysRemaining}일`,
@@ -315,6 +348,7 @@ async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName
         vendor?.vendorContact ? `업체 담당자: ${vendor.vendorContact}` : null,
         vendor?.vendorEmail ? `업체 이메일: ${vendor.vendorEmail}` : null,
         notes ? `비고: ${notes}` : null,
+        serviceNotes ? `서비스 메모: ${serviceNotes}` : null,
         vendor?.vendorNotes ? `업체 메모: ${vendor.vendorNotes}` : null
       ]
         .filter(Boolean)
