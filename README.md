@@ -176,6 +176,8 @@ GitHub Actions에서는 `.env`를 읽지 않으므로, 실제 워크플로 실�
 DRY_RUN=true npm run check
 ```
 
+`DRY_RUN=true`에서는 `TEAMS_WORKFLOW_URL`이 없어도 실행됩니다.
+
 테스트용 행을 만들 때는 `expires_at`을 오늘 기준 30일 이내 또는 14일 이내로 넣고, `notified_30d_at`, `notified_14d_at`은 비워 둡니다. 예를 들어 오늘이 2026-05-05라면 D-30 테스트는 `2026-06-04`, D-14 테스트는 `2026-05-19`를 사용합니다.
 
 실제 Teams 알림까지 확인하려면 `DRY_RUN`을 제거하고 수동 실행합니다.

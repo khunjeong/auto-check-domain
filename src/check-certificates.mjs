@@ -328,11 +328,11 @@ async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName
 async function main() {
   const serviceAccountJson = requireEnv('GOOGLE_SERVICE_ACCOUNT_JSON');
   const spreadsheetId = requireEnv('GOOGLE_SHEET_ID');
-  const workflowUrl = requireEnv('TEAMS_WORKFLOW_URL');
+  const dryRun = isDryRun();
+  const workflowUrl = dryRun ? process.env.TEAMS_WORKFLOW_URL || 'dry-run' : requireEnv('TEAMS_WORKFLOW_URL');
   const vendorSheetName = process.env.GOOGLE_VENDOR_SHEET_NAME || 'Vendors';
 
   const sheets = await getSheetsClient(serviceAccountJson);
-  const dryRun = isDryRun();
   const today = new Date();
   const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
   const nowIso = new Date().toISOString();
