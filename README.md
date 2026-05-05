@@ -26,6 +26,14 @@ Google Sheets를 inventory로 사용하고, GitHub Actions가 매일 실행되�
 - `certificate_name` 또는 `service_name`
 - `expires_at`
 
+기존 한국어 시트도 지원합니다.
+
+- 인증서 이름: `도메인`
+- 만료일: `인증서만료일`
+- 업체: `구매업체`
+- 상태: `상태`
+- 알림 상태: `30일전알림일`, `14일전알림일`
+
 선택 컬럼:
 
 - `owner`
@@ -51,6 +59,14 @@ Google Sheets를 inventory로 사용하고, GitHub Actions가 매일 실행되�
 
 - `domain_name`
 - `expires_at`
+
+기존 한국어 시트도 지원합니다.
+
+- 도메인 이름: `도메인`
+- 만료일: `계약 만료일`
+- 업체: `구매업체`
+- 상태: `상태`
+- 알림 상태: `30일전알림일`, `14일전알림일`
 
 선택 컬럼:
 
@@ -164,6 +180,12 @@ TEAMS_WORKFLOW_URL='https://...'
 GOOGLE_CERTIFICATE_SHEET_NAME='Certificates'
 GOOGLE_DOMAIN_SHEET_NAME='Domains'
 GOOGLE_VENDOR_SHEET_NAME='Vendors'
+```
+
+현재처럼 기존 한국어 탭 `시트1`을 인증서 inventory로 쓰려면 아래처럼 설정합니다.
+
+```bash
+GOOGLE_CERTIFICATE_SHEET_NAME='시트1'
 ```
 
 GitHub Actions에서는 `.env`를 읽지 않으므로, 실제 워크플로 실행에는 동일 값을 GitHub Secrets / Variables로 넣어야 합니다.

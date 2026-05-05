@@ -1,22 +1,33 @@
 import 'dotenv/config';
 import { google } from 'googleapis';
 
-const STATE_HEADERS = ['tracked_expires_at', 'notified_30d_at', 'notified_14d_at'];
 const ASSET_CONFIGS = [
   {
     assetType: 'certificate',
     envName: 'GOOGLE_CERTIFICATE_SHEET_NAME',
     defaultSheetName: 'Certificates',
-    nameHeaders: ['certificate_name', 'service_name']
+    nameHeaders: ['certificate_name', 'service_name', '도메인'],
+    expiresAtHeaders: ['expires_at', '인증서만료일']
   },
   {
     assetType: 'domain',
     envName: 'GOOGLE_DOMAIN_SHEET_NAME',
     defaultSheetName: 'Domains',
-    nameHeaders: ['domain_name']
+    nameHeaders: ['domain_name', '도메인'],
+    expiresAtHeaders: ['expires_at', '계약 만료일']
   }
 ];
 const VENDOR_HEADERS = ['vendor_key', 'vendor_name'];
+const HEADER_ALIASES = {
+  owner: ['owner', '담당팀'],
+  teamsRecipient: ['teams_recipient', '알림채널'],
+  notes: ['notes', '메모', '용도'],
+  vendorKey: ['vendor_key', '구매업체'],
+  trackedExpiresAt: ['tracked_expires_at'],
+  notified30dAt: ['notified_30d_at', '30일전알림일'],
+  notified14dAt: ['notified_14d_at', '14일전알림일'],
+  status: ['status', '상태']
+};
 
 function requireEnv(name, fallback = undefined) {
   const rawValue = process.env[name];
@@ -102,8 +113,25 @@ function getHeaderValue(values, headerIndex, headerName) {
   return String(values[columnIndex] ?? '').trim();
 }
 
-function resolveAssetNameHeader(headerIndex, nameHeaders) {
-  return nameHeaders.find((header) => headerIndex.has(header)) ?? null;
+function resolveHeader(headerIndex, headerNames) {
+  return headerNames.find((header) => headerIndex.has(header)) ?? null;
+}
+
+function getAliasedHeaderValue(values, headerIndex, headerNames) {
+  const headerName = resolveHeader(headerIndex, headerNames);
+  return headerName ? getHeaderValue(values, headerIndex, headerName) : '';
+}
+
+function queueUpdateIfHeaderExists(updates, sheetName, headerIndex, headerNames, rowNumber, value) {
+  const headerName = resolveHeader(headerIndex, headerNames);
+  if (!headerName) {
+    return;
+  }
+
+  updates.push({
+    range: `${sheetName}!${columnToLetter(headerIndex.get(headerName))}${rowNumber}`,
+    values: [[value]]
+  });
 }
 
 async function getSheetsClient(serviceAccountJson) {
@@ -191,17 +219,18 @@ async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName
 
   const headers = rows[0].map(normalizeHeader);
   const headerIndex = new Map(headers.map((header, index) => [header, index]));
-  const assetNameHeader = resolveAssetNameHeader(headerIndex, nameHeaders);
+  const assetNameHeader = resolveHeader(headerIndex, nameHeaders);
   if (!assetNameHeader) {
     throw new Error(`Missing required asset name header in ${sheetName}: one of ${nameHeaders.join(', ')}`);
   }
-  if (!headerIndex.has('expires_at')) {
-    throw new Error(`Missing required sheet header in ${sheetName}: expires_at`);
+  const expiresAtHeader = resolveHeader(headerIndex, ASSET_CONFIGS.find((config) => config.assetType === assetType).expiresAtHeaders);
+  if (!expiresAtHeader) {
+    throw new Error(`Missing required expiry header in ${sheetName}`);
   }
-  for (const header of STATE_HEADERS) {
-    if (!headerIndex.has(header)) {
-      throw new Error(`Missing state header in ${sheetName}: ${header}`);
-    }
+  const has30dStateHeader = resolveHeader(headerIndex, HEADER_ALIASES.notified30dAt);
+  const has14dStateHeader = resolveHeader(headerIndex, HEADER_ALIASES.notified14dAt);
+  if (!has30dStateHeader || !has14dStateHeader) {
+    throw new Error(`Missing notification state headers in ${sheetName}`);
   }
 
   const updates = [];
@@ -211,9 +240,14 @@ async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName
     const rowNumber = i + 1;
     const values = rows[i];
     const assetName = getHeaderValue(values, headerIndex, assetNameHeader);
-    const expiresRaw = values[headerIndex.get('expires_at')];
+    const expiresRaw = values[headerIndex.get(expiresAtHeader)];
 
     if (!assetName && !expiresRaw) {
+      continue;
+    }
+
+    const status = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.status);
+    if (status && status.toUpperCase() !== 'ACTIVE') {
       continue;
     }
 
@@ -224,35 +258,28 @@ async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName
     }
 
     const expiresAtIso = toIsoDate(expiresAt);
-    const trackedExpiresAt = getHeaderValue(values, headerIndex, 'tracked_expires_at');
-    const notified30dAt = getHeaderValue(values, headerIndex, 'notified_30d_at');
-    const notified14dAt = getHeaderValue(values, headerIndex, 'notified_14d_at');
-    const owner = getHeaderValue(values, headerIndex, 'owner');
-    const teamsRecipient = getHeaderValue(values, headerIndex, 'teams_recipient');
-    const notes = getHeaderValue(values, headerIndex, 'notes');
-    const vendorKey = getHeaderValue(values, headerIndex, 'vendor_key');
+    const trackedExpiresAt = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.trackedExpiresAt);
+    const notified30dAt = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.notified30dAt);
+    const notified14dAt = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.notified14dAt);
+    const owner = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.owner);
+    const teamsRecipient = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.teamsRecipient);
+    const notes = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.notes);
+    const vendorKey = getAliasedHeaderValue(values, headerIndex, HEADER_ALIASES.vendorKey);
     const vendor = vendorMap.get(vendorKey) ?? null;
     const rowModel = {
       notified30dAt,
       notified14dAt
     };
 
-    if (trackedExpiresAt !== expiresAtIso) {
+    if (trackedExpiresAt && trackedExpiresAt !== expiresAtIso) {
       rowModel.notified30dAt = '';
       rowModel.notified14dAt = '';
 
-      updates.push({
-        range: `${sheetName}!${columnToLetter(headerIndex.get('tracked_expires_at'))}${rowNumber}`,
-        values: [[expiresAtIso]]
-      });
-      updates.push({
-        range: `${sheetName}!${columnToLetter(headerIndex.get('notified_30d_at'))}${rowNumber}`,
-        values: [['']]
-      });
-      updates.push({
-        range: `${sheetName}!${columnToLetter(headerIndex.get('notified_14d_at'))}${rowNumber}`,
-        values: [['']]
-      });
+      queueUpdateIfHeaderExists(updates, sheetName, headerIndex, HEADER_ALIASES.trackedExpiresAt, rowNumber, expiresAtIso);
+      queueUpdateIfHeaderExists(updates, sheetName, headerIndex, HEADER_ALIASES.notified30dAt, rowNumber, '');
+      queueUpdateIfHeaderExists(updates, sheetName, headerIndex, HEADER_ALIASES.notified14dAt, rowNumber, '');
+    } else if (!trackedExpiresAt) {
+      queueUpdateIfHeaderExists(updates, sheetName, headerIndex, HEADER_ALIASES.trackedExpiresAt, rowNumber, expiresAtIso);
     }
 
     const daysRemaining = daysBetween(todayUtc, expiresAt);
@@ -301,11 +328,8 @@ async function processAssetSheet({ sheets, spreadsheetId, workflowUrl, sheetName
       await sendTeamsAlert(workflowUrl, payload);
     }
 
-    const notifiedHeader = alertWindow === 30 ? 'notified_30d_at' : 'notified_14d_at';
-    updates.push({
-      range: `${sheetName}!${columnToLetter(headerIndex.get(notifiedHeader))}${rowNumber}`,
-      values: [[nowIso]]
-    });
+    const notifiedHeaderAliases = alertWindow === 30 ? HEADER_ALIASES.notified30dAt : HEADER_ALIASES.notified14dAt;
+    queueUpdateIfHeaderExists(updates, sheetName, headerIndex, notifiedHeaderAliases, rowNumber, nowIso);
     sentCount += 1;
     console.log(`Alert sent for ${sheetName} row ${rowNumber}: ${assetName} (${assetType}, D-${alertWindow})`);
   }
