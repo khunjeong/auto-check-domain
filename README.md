@@ -184,10 +184,10 @@ GOOGLE_DOMAIN_SHEET_NAME='Domains'
 GOOGLE_VENDOR_SHEET_NAME='Vendors'
 ```
 
-현재처럼 기존 한국어 탭 `시트1`을 인증서 inventory로 쓰려면 아래처럼 설정합니다.
+현재처럼 기존 한국어 탭 `인증서`를 인증서 inventory로 쓰려면 아래처럼 설정합니다.
 
 ```bash
-GOOGLE_CERTIFICATE_SHEET_NAME='시트1'
+GOOGLE_CERTIFICATE_SHEET_NAME='인증서'
 ```
 
 GitHub Actions에서는 `.env`를 읽지 않으므로, 실제 워크플로 실행에는 동일 값을 GitHub Secrets / Variables로 넣어야 합니다.
@@ -208,6 +208,20 @@ DRY_RUN=true npm run check
 
 ```bash
 npm run check
+```
+
+## Sheet maintenance
+
+시트 포맷을 다시 적용하려면 아래 명령을 실행합니다.
+
+```bash
+npm run format:sheet
+```
+
+`용도` 컬럼의 드롭다운 옵션을 다시 구성하려면 아래 명령을 실행합니다. 기존 `용도` 값과 기본 옵션을 모아 `Options` 탭을 만들고, inventory 시트의 `용도` 컬럼에 선택 목록을 적용합니다.
+
+```bash
+npm run configure:sheet
 ```
 
 ## Alert behavior

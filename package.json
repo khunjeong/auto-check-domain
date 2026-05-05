@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "check": "node src/check-certificates.mjs",
-    "format:sheet": "node scripts/format-sheet.mjs"
+    "format:sheet": "node scripts/format-sheet.mjs",
+    "configure:sheet": "node scripts/configure-sheet-validations.mjs"
   },
   "engines": {
     "node": ">=20"
